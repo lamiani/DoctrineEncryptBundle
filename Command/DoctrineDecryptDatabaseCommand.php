@@ -3,7 +3,8 @@
 namespace Ambta\DoctrineEncryptBundle\Command;
 
 use Ambta\DoctrineEncryptBundle\DependencyInjection\DoctrineEncryptExtension;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -39,15 +40,13 @@ class DoctrineDecryptDatabaseCommand extends AbstractCommand
         $question = $this->getHelper('question');
 
         // Get list of supported encryptors
-        $supportedExtensions = DoctrineEncryptExtension::SupportedEncryptorClasses;
+        $supportedExtensions = DoctrineEncryptExtension::$supportedEncryptorClasses;
         $batchSize = $input->getArgument('batchSize');
 
         // If encryptor has been set use that encryptor else use default
         if ($input->getArgument('encryptor')) {
             if (isset($supportedExtensions[$input->getArgument('encryptor')])) {
-                $reflection = new \ReflectionClass($supportedExtensions[$input->getArgument('encryptor')]);
-                $encryptor = $reflection->newInstance();
-                $this->subscriber->setEncryptor($encryptor);
+                $this->subscriber->setEncryptor($supportedExtensions[$input->getArgument('encryptor')]);
             } else {
                 if (class_exists($input->getArgument('encryptor'))) {
                     $this->subscriber->setEncryptor($input->getArgument('encryptor'));
@@ -65,7 +64,7 @@ class DoctrineDecryptDatabaseCommand extends AbstractCommand
         // Set counter and loop through entity manager meta data
         $propertyCount = 0;
         foreach ($metaDataArray as $metaData) {
-            if ($metaData instanceof ClassMetadataInfo and $metaData->isMappedSuperclass) {
+            if ($metaData->isMappedSuperclass) {
                 continue;
             }
 
@@ -75,14 +74,14 @@ class DoctrineDecryptDatabaseCommand extends AbstractCommand
 
         $confirmationQuestion = new ConfirmationQuestion(
             '<question>' . count($metaDataArray) . ' entities found which are containing ' . $propertyCount . ' properties with the encryption tag. ' . PHP_EOL . '' .
-            'Which are going to be decrypted with [' . get_class($this->subscriber->getEncryptor()) . ']. ' . PHP_EOL . '' .
+            'Which are going to be decrypted with [' . $this->subscriber->getEncryptor() . ']. ' . PHP_EOL . '' .
             'Wrong settings can mess up your data and it will be unrecoverable. ' . PHP_EOL . '' .
             'I advise you to make <bg=yellow;options=bold>a backup</bg=yellow;options=bold>. ' . PHP_EOL . '' .
             'Continue with this action? (y/yes)</question>', false
         );
 
         if (!$question->ask($input, $output, $confirmationQuestion)) {
-            return 1;
+            return;
         }
 
         // Start decrypting database

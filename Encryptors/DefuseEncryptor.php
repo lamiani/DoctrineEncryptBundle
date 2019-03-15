@@ -20,7 +20,7 @@ class DefuseEncryptor implements EncryptorInterface
     /**
      * {@inheritdoc}
      */
-    public function __construct(string $keyFile)
+    public function __construct($keyFile)
     {
         $this->encryptionKey = null;
         $this->keyFile       = $keyFile;

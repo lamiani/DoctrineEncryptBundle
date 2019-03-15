@@ -39,14 +39,12 @@ class DoctrineEncryptDatabaseCommand extends AbstractCommand
         $batchSize = $input->getArgument('batchSize');
 
         // Get list of supported encryptors
-        $supportedExtensions = DoctrineEncryptExtension::SupportedEncryptorClasses;
+        $supportedExtensions = DoctrineEncryptExtension::$supportedEncryptorClasses;
 
         // If encryptor has been set use that encryptor else use default
         if ($input->getArgument('encryptor')) {
             if (isset($supportedExtensions[$input->getArgument('encryptor')])) {
-                $reflection = new \ReflectionClass($supportedExtensions[$input->getArgument('encryptor')]);
-                $encryptor = $reflection->newInstance();
-                $this->subscriber->setEncryptor($encryptor);
+                $this->subscriber->setEncryptor($supportedExtensions[$input->getArgument('encryptor')]);
             } else {
                 if (class_exists($input->getArgument('encryptor'))) {
                     $this->subscriber->setEncryptor($input->getArgument('encryptor'));
@@ -62,14 +60,14 @@ class DoctrineEncryptDatabaseCommand extends AbstractCommand
         $metaDataArray = $this->getEncryptionableEntityMetaData();
         $confirmationQuestion = new ConfirmationQuestion(
             '<question>' . count($metaDataArray) . ' entities found which are containing properties with the encryption tag.' . PHP_EOL . '' .
-            'Which are going to be encrypted with [' . get_class($this->subscriber->getEncryptor()) . ']. ' . PHP_EOL . ''.
+            'Which are going to be encrypted with [' . $this->subscriber->getEncryptor() . ']. ' . PHP_EOL . ''.
             'Wrong settings can mess up your data and it will be unrecoverable. ' . PHP_EOL . '' .
             'I advise you to make <bg=yellow;options=bold>a backup</bg=yellow;options=bold>. ' . PHP_EOL . '' .
             'Continue with this action? (y/yes)</question>', false
         );
 
         if (!$question->ask($input, $output, $confirmationQuestion)) {
-            return 1;
+            return;
         }
 
         // Start decrypting database
