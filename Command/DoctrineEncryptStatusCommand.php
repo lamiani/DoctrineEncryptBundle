@@ -2,7 +2,6 @@
 
 namespace Ambta\DoctrineEncryptBundle\Command;
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -33,7 +32,7 @@ class DoctrineEncryptStatusCommand extends AbstractCommand
 
         $totalCount = 0;
         foreach ($metaDataArray as $metaData) {
-            if ($metaData instanceof ClassMetadataInfo  and $metaData->isMappedSuperclass) {
+            if ($metaData->isMappedSuperclass) {
                 continue;
             }
 

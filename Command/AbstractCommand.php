@@ -2,18 +2,18 @@
 namespace Ambta\DoctrineEncryptBundle\Command;
 
 use Ambta\DoctrineEncryptBundle\Subscribers\DoctrineEncryptSubscriber;
-use Doctrine\Common\Annotations\Reader;
-use Doctrine\ORM\EntityManager;
+use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
-use Symfony\Component\Console\Command\Command;
+use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Base command containing usefull base methods.
  *
  * @author Michael Feinbier <michael@feinbier.net>
  **/
-abstract class AbstractCommand extends Command
+abstract class AbstractCommand extends ContainerAwareCommand
 {
     /**
      * @var EntityManagerInterface
@@ -26,26 +26,19 @@ abstract class AbstractCommand extends Command
     protected $subscriber;
 
     /**
-     * @var Reader
+     * @var AnnotationReader
      */
     protected $annotationReader;
 
     /**
-     * AbstractCommand constructor.
-     *
-     * @param EntityManager             $entityManager
-     * @param Reader                    $annotationReader
-     * @param DoctrineEncryptSubscriber $subscriber
+     * {@inheritdoc}
      */
-    public function __construct(
-        EntityManager $entityManager,
-        Reader $annotationReader,
-        DoctrineEncryptSubscriber $subscriber
-    ) {
-        parent::__construct();
-        $this->entityManager = $entityManager;
-        $this->annotationReader = $annotationReader;
-        $this->subscriber = $subscriber;
+    protected function initialize(InputInterface $input, OutputInterface $output)
+    {
+        $container              = $this->getContainer();
+        $this->entityManager    = $container->get('doctrine.orm.entity_manager');
+        $this->annotationReader = $container->get('annotation_reader');
+        $this->subscriber       = $container->get('ambta_doctrine_encrypt.subscriber');
     }
 
     /**
@@ -89,7 +82,7 @@ abstract class AbstractCommand extends Command
 
         foreach ($metaDataArray as $entityMetaData)
         {
-            if ($entityMetaData instanceof ClassMetadataInfo and $entityMetaData->isMappedSuperclass) {
+            if ($entityMetaData->isMappedSuperclass) {
                 continue;
             }
 
